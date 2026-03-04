@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars: cp terraform.tfvars.example terraform.tfvars
+# Run 01-alb first: cd ../01-alb && terraform apply
+
+aws_region   = "us-east-1"
+project_name = "kutoot"
+environment  = "prod"
+
+key_name = "kutoot-sql"
+
+# MySQL EC2 security group - get from EC2 Console
+mysql_security_group_id = "sg-xxxxxxxxx"
+
+allowed_ssh_cidr = "101.0.63.108/32"
+
+asg_min_size         = 1
+asg_max_size         = 8
+asg_desired_capacity = 1
