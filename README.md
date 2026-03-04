@@ -65,7 +65,7 @@ The ASG component reads outputs from ALB via Terraform remote state.
 ### 01-alb
 | Variable | Default | Description |
 |----------|---------|-------------|
-| aws_region | us-east-1 | AWS region |
+| aws_region | ap-south-1 | AWS region |
 | project_name | kutoot | Resource naming |
 | subnet_ids | [] | Subnets (empty = default VPC) |
 

@@ -1,6 +1,6 @@
 # Copy to terraform.tfvars: cp terraform.tfvars.example terraform.tfvars
 
-aws_region   = "us-east-1"
+aws_region   = "ap-south-1"
 project_name = "kutoot"
 environment  = "prod"
 
