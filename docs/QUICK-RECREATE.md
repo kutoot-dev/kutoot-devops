@@ -11,9 +11,10 @@ Store these in a safe place (e.g. password manager, encrypted drive, separate re
 | Item | Location | Why |
 |------|----------|-----|
 | `terraform/01-alb/terraform.tfvars` | (optional – has defaults) | ALB config |
-| `terraform/02-asg/terraform.tfvars` | **Critical** | Key name, MySQL SG, SSH CIDR |
+| `terraform/02-asg/terraform.tfvars` | **Critical** | Key name, MySQL SG, SSH CIDR, db_password |
 | `terraform/03-route53/terraform.tfvars` | If using Route 53 | Domain config |
 | `kutoot-sql.pem` | SSH key | Access EC2 instances |
+| Laravel .env | /var/www/kutoot/.env | Full app config (DB, AWS, Razorpay, Mail, SMS) |
 | MySQL password | Secure store | DB connection |
 | AWS credentials | `~/.aws/credentials` | Terraform & CLI |
 
@@ -22,7 +23,7 @@ Store these in a safe place (e.g. password manager, encrypted drive, separate re
 .\scripts\backup-config.ps1
 ```
 Stores `terraform.tfvars` from each folder into `backups/config-YYYYMMDD_HHmm/`.  
-**Manually store:** `kutoot-sql.pem`, MySQL password, AWS credentials.
+**Manually store:** `kutoot-sql.pem`, MySQL password, AWS credentials, Laravel `.env` (from /var/www/kutoot/).
 
 ---
 

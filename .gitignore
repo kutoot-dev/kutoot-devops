@@ -15,3 +15,6 @@ Thumbs.db
 # Backups
 backups/
 *.sql
+
+# Secrets - never commit .env (use env-templates/.env.example as template)
+.env

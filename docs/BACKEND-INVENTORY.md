@@ -88,6 +88,7 @@ AWS Account: 408110214942
   3. MySQL down? Restore from backup-mysql.sh backup
   4. Laravel instance down? ASG auto-launches new one (with User Data if terraform applied)
   5. SSH: ssh -i kutoot-sql.pem ubuntu@<PublicIP>
-  6. See docs/QUICK-RECREATE.md for full runbook
+  6. Restore .env from backup (see docs/ENV-VARIABLES.md)
+  7. See docs/QUICK-RECREATE.md for full runbook
 
 ==========================================
