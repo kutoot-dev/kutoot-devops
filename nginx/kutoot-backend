@@ -1,0 +1,21 @@
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    root /var/www/kutoot/public;
+    index index.php index.html;
+    server_name _;
+
+    client_max_body_size 1024M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_read_timeout 120;
+    }
+}
