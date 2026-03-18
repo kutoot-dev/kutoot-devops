@@ -27,3 +27,9 @@ variable "subnet_ids" {
   type        = list(string)
   default     = []
 }
+
+variable "certificate_arn" {
+  description = "ACM certificate ARN for HTTPS. When set, adds HTTPS listener and redirects HTTP to HTTPS."
+  type        = string
+  default     = ""
+}

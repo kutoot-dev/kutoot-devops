@@ -7,3 +7,6 @@ environment  = "prod"
 # Optional: Override VPC and subnets
 # vpc_id     = "vpc-xxxxx"
 # subnet_ids = ["subnet-xxx", "subnet-yyy"]
+
+# HTTPS: Set by apply-all.sh from 03-route53 output. Or set manually after creating cert:
+# certificate_arn = "arn:aws:acm:ap-south-1:ACCOUNT:certificate/xxx"

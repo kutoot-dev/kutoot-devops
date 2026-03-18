@@ -10,7 +10,7 @@ output "alb_zone_id" {
 
 output "alb_url" {
   description = "URL to access the application"
-  value       = "http://${aws_lb.main.dns_name}"
+  value       = var.certificate_arn != "" ? "https://${aws_lb.main.dns_name}" : "http://${aws_lb.main.dns_name}"
 }
 
 output "target_group_arn" {

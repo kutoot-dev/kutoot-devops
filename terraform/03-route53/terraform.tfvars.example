@@ -1,0 +1,17 @@
+# Route 53 - Domain setup for www.kutoot.com
+# Copy to terraform.tfvars and fill in values
+
+aws_region  = "ap-south-1"
+domain_name = "kutoot.com"
+
+# Option A: Create new hosted zone in Route 53 (for new domain or moving DNS to AWS)
+# After apply, update your domain registrar's nameservers to the output name_servers
+create_hosted_zone = true
+route53_zone_id   = ""
+
+# Option B: Use existing Route 53 hosted zone (if kutoot.com is already in Route 53)
+# create_hosted_zone = false
+# route53_zone_id   = "Z0123456789ABCDEFGHIJ"
+
+# Also create apex record (kutoot.com -> ALB)
+create_apex_record = true

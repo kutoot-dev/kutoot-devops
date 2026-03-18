@@ -31,7 +31,11 @@ fi
 echo ">>> Installing PHP 8.4, Nginx, Composer..."
 sudo add-apt-repository ppa:ondrej/php -y 2>/dev/null || true
 sudo apt update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt install -y nginx php8.4-fpm php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip php8.4-gd php8.4-bcmath unzip git
+sudo DEBIAN_FRONTEND=noninteractive apt install -y \
+  nginx \
+  php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
+  php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl php8.4-opcache \
+  unzip git
 
 echo ">>> Installing Composer..."
 curl -sS https://getcomposer.org/installer | php
