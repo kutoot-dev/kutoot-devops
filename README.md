@@ -7,9 +7,11 @@ Infrastructure as Code and deployment scripts for Kutoot platform.
 ```
 kutoot-devops/
 ├── terraform/
+│   ├── 00-mysql/        # MySQL EC2 (run first)
 │   ├── 01-alb/          # Application Load Balancer
-│   ├── 02-asg/          # Auto Scaling Group (Laravel EC2)
-│   └── 03-route53/      # Route 53 DNS (www.kutoot.com)
+│   ├── 02-asg/          # Auto Scaling Group (Laravel EC2 + User Data)
+│   ├── 03-route53/      # Route 53 DNS (www.kutoot.com)
+│   └── 05-s3/           # S3 bucket (kutoot-backend)
 ├── scripts/
 │   ├── apply-all.sh       # Apply all Terraform (bash)
 │   ├── quick-recreate.ps1 # Recreate infra (PowerShell)
@@ -58,11 +60,15 @@ cd terraform/01-alb
 terraform output alb_url
 ```
 
-## Deployment Order
+## Deployment Order (Full IaC)
 
-**Important:** Always apply in order: `01-alb` → `02-asg` → `03-route53` (optional)
+**One command:** `.\scripts\quick-recreate.ps1`
 
-The ASG component reads outputs from ALB via Terraform remote state. Route 53 reads from ALB.
+Order: `00-mysql` → `01-alb` → `02-asg` → `03-route53` → `01-alb` (HTTPS) → `05-s3`
+
+- Copy `terraform.tfvars.example` to `terraform.tfvars` in each folder
+- Set `db_password` in 00-mysql and 02-asg
+- Laravel auto-deploys via User Data on new instances
 
 ## Domain + HTTPS Setup (www.kutoot.com)
 

@@ -51,19 +51,25 @@ variable "allowed_ssh_cidr" {
   default     = "0.0.0.0/0"
 }
 
+variable "use_mysql_module" {
+  description = "When true, get MySQL SG and db_host from 00-mysql. Run 00-mysql first."
+  type        = bool
+  default     = false
+}
+
 variable "mysql_security_group_id" {
-  description = "MySQL EC2 security group ID (allow Laravel to connect)"
+  description = "MySQL EC2 security group ID (when use_mysql_module=false)"
   type        = string
   default     = ""
 }
 
-# --- For User Data (auto-deploy on new instances) ---
 variable "db_host" {
-  description = "MySQL host for Laravel .env"
+  description = "MySQL host for Laravel (when use_mysql_module=false)"
   type        = string
   default     = "172.31.45.181"
 }
 
+# --- For User Data (auto-deploy on new instances) ---
 variable "db_database" {
   description = "MySQL database name"
   type        = string

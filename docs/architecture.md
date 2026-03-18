@@ -94,9 +94,17 @@ cd terraform/03-route53 && terraform state list
 | MySQL EC2 (t3.medium) | ₹2,800 |
 | **Total** | ~₹7,100 |
 
-## Deployment Order
+## Deployment Order (Full IaC)
 
-1. **01-alb** - Create ALB first
-2. **02-asg** - Create ASG (depends on ALB)
-3. **03-route53** - Point www.kutoot.com to ALB (optional)
-4. **Deploy Laravel** - Run `deploy-laravel-ec2.sh` on EC2 instances
+```powershell
+.\scripts\quick-recreate.ps1
+```
+
+1. **00-mysql** - MySQL EC2 (if terraform.tfvars exists)
+2. **01-alb** - ALB + Target Group
+3. **02-asg** - Launch Template + ASG (User Data auto-deploys Laravel)
+4. **03-route53** - DNS + HTTPS cert (optional)
+5. **01-alb** - Add HTTPS listener (if cert from 03-route53)
+6. **05-s3** - S3 bucket for uploads (optional)
+
+Laravel auto-deploys via User Data (~5-10 min). No manual SSH deploy needed.

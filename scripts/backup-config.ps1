@@ -12,7 +12,7 @@ New-Item -ItemType Directory -Force -Path $dest | Out-Null
 Write-Host "Backing up config to $dest" -ForegroundColor Cyan
 
 $copied = $false
-foreach ($dir in @("01-alb", "02-asg", "03-route53")) {
+foreach ($dir in @("00-mysql", "01-alb", "02-asg", "03-route53", "05-s3")) {
     $src = Join-Path $PSScriptRoot "..\terraform\$dir\terraform.tfvars"
     if (Test-Path $src) {
         Copy-Item $src (Join-Path $dest "terraform-$dir.tfvars")

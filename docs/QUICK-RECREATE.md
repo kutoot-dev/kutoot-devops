@@ -13,6 +13,7 @@ Store these in a safe place (e.g. password manager, encrypted drive, separate re
 | `terraform/01-alb/terraform.tfvars` | (optional – has defaults) | ALB config |
 | `terraform/02-asg/terraform.tfvars` | **Critical** | Key name, MySQL SG, SSH CIDR, db_password |
 | `terraform/03-route53/terraform.tfvars` | If using Route 53 | Domain config |
+| `terraform/05-s3/terraform.tfvars` | If using S3 | Bucket config |
 | `kutoot-sql.pem` | SSH key | Access EC2 instances |
 | Laravel .env | /var/www/kutoot/.env | Full app config (DB, AWS, Razorpay, Mail, SMS) |
 | MySQL password | Secure store | DB connection |
@@ -117,6 +118,18 @@ Stores `terraform.tfvars` from each folder into `backups/config-YYYYMMDD_HHmm/`.
 | Deploy Laravel | SSH to instance → `./deploy-laravel-ec2.sh PASSWORD` |
 
 ---
+
+## S3 Bucket (if created manually)
+
+Import existing `kutoot-backend` bucket:
+
+```powershell
+cd terraform/05-s3
+copy terraform.tfvars.example terraform.tfvars
+terraform init
+terraform import aws_s3_bucket.laravel kutoot-backend
+terraform apply -auto-approve
+```
 
 ## Critical Values (Update if Changed)
 

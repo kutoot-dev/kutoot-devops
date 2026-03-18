@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars: cp terraform.tfvars.example terraform.tfvars
+# Creates kutoot-backend bucket for Laravel file uploads
+
+aws_region   = "ap-south-1"
+project_name = "kutoot"
+environment  = "prod"

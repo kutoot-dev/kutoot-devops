@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------
-# Remote state from 01-alb
+# Remote state from 01-alb and optionally 00-mysql
 # -----------------------------------------------------------------------------
 
 data "terraform_remote_state" "alb" {
@@ -9,8 +9,18 @@ data "terraform_remote_state" "alb" {
   }
 }
 
+data "terraform_remote_state" "mysql" {
+  count   = var.use_mysql_module ? 1 : 0
+  backend = "local"
+  config = {
+    path = "${path.module}/../00-mysql/terraform.tfstate"
+  }
+}
+
 locals {
-  name = "${var.project_name}-${var.environment}"
+  name                    = "${var.project_name}-${var.environment}"
+  mysql_security_group_id = var.use_mysql_module ? data.terraform_remote_state.mysql[0].outputs.mysql_security_group_id : var.mysql_security_group_id
+  db_host                 = var.use_mysql_module ? data.terraform_remote_state.mysql[0].outputs.mysql_private_ip : var.db_host
 }
 
 # -----------------------------------------------------------------------------
@@ -52,13 +62,13 @@ resource "aws_security_group" "laravel" {
 
 # Allow Laravel to connect to MySQL
 resource "aws_security_group_rule" "mysql_from_laravel" {
-  count                    = var.mysql_security_group_id != "" ? 1 : 0
+  count                    = local.mysql_security_group_id != "" ? 1 : 0
   type                     = "ingress"
   from_port                = 3306
   to_port                  = 3306
   protocol                 = "tcp"
   source_security_group_id = aws_security_group.laravel.id
-  security_group_id        = var.mysql_security_group_id
+  security_group_id        = local.mysql_security_group_id
   description              = "MySQL from Laravel"
 }
 
@@ -90,7 +100,7 @@ resource "aws_launch_template" "laravel" {
   vpc_security_group_ids = [aws_security_group.laravel.id]
 
   user_data = base64encode(templatefile("${path.module}/templates/user-data.sh", {
-    db_host         = var.db_host
+    db_host         = local.db_host
     db_database     = var.db_database
     db_username     = var.db_username
     db_password     = var.db_password

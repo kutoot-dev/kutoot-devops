@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars: cp terraform.tfvars.example terraform.tfvars
+# Run FIRST before 01-alb and 02-asg
+
+aws_region   = "ap-south-1"
+project_name = "kutoot"
+environment  = "prod"
+
+key_name = "kutoot-sql"
+allowed_ssh_cidr = "101.0.63.108/32"
+
+instance_type = "t3.medium"
+
+db_database = "kutoot_backend"
+db_username = "admin"
+db_password = "YOUR_MYSQL_PASSWORD"

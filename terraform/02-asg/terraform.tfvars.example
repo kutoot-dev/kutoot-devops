@@ -1,26 +1,27 @@
 # Copy to terraform.tfvars: cp terraform.tfvars.example terraform.tfvars
-# Run 01-alb first: cd ../01-alb && terraform apply
+# Full IaC: Run 00-mysql first, then use_mysql_module=true (auto-set by quick-recreate.ps1)
+# Existing MySQL: Set use_mysql_module=false, mysql_security_group_id, db_host
 
 aws_region   = "ap-south-1"
 project_name = "kutoot"
 environment  = "prod"
 
 key_name = "kutoot-sql"
-
-# MySQL EC2 security group - get from EC2 Console
-mysql_security_group_id = "sg-xxxxxxxxx"
-
 allowed_ssh_cidr = "101.0.63.108/32"
+
+# When use_mysql_module=true: get from 00-mysql (run quick-recreate.ps1)
+# When use_mysql_module=false: set manually
+use_mysql_module      = false
+mysql_security_group_id = "sg-xxxxxxxxx"
+db_host               = "172.31.45.181"
 
 asg_min_size         = 1
 asg_max_size         = 8
 asg_desired_capacity = 1
 
 # --- User Data (auto-deploys Laravel on new instances) ---
-db_host     = "172.31.45.181"
 db_database = "kutoot_backend"
 db_username = "admin"
 db_password = "YOUR_MYSQL_PASSWORD"
 
-# Laravel repo - use HTTPS. For private repo: https://x-access-token:TOKEN@github.com/kutoot-dev/kutoot_backend.git
 laravel_repo_url = "https://github.com/kutoot-dev/kutoot_backend.git"
