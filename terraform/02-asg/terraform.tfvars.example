@@ -15,3 +15,12 @@ allowed_ssh_cidr = "101.0.63.108/32"
 asg_min_size         = 1
 asg_max_size         = 8
 asg_desired_capacity = 1
+
+# --- User Data (auto-deploys Laravel on new instances) ---
+db_host     = "172.31.45.181"
+db_database = "kutoot_backend"
+db_username = "admin"
+db_password = "YOUR_MYSQL_PASSWORD"
+
+# Laravel repo - use HTTPS. For private repo: https://x-access-token:TOKEN@github.com/kutoot-dev/kutoot_backend.git
+laravel_repo_url = "https://github.com/kutoot-dev/kutoot_backend.git"

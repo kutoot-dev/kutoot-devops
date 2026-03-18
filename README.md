@@ -123,6 +123,14 @@ Creates ACM certificate for HTTPS (kutoot.com + www.kutoot.com) with DNS validat
 |----------|---------|-------------|
 | certificate_arn | "" | ACM cert ARN. When set: HTTPS listener + HTTP→HTTPS redirect |
 
+## Backend Inventory (run after AWS CLI setup)
+
+```powershell
+.\scripts\aws-full-inventory.ps1
+```
+
+Creates `docs/BACKEND-INVENTORY.md` with complete AWS resource list. Run weekly or after changes. See [docs/AWS-CLI-SETUP.md](docs/AWS-CLI-SETUP.md).
+
 ## Disaster Recovery / Quick Recreate
 
 If infrastructure is lost, recreate in ~10–15 minutes:

@@ -89,6 +89,14 @@ resource "aws_launch_template" "laravel" {
 
   vpc_security_group_ids = [aws_security_group.laravel.id]
 
+  user_data = base64encode(templatefile("${path.module}/templates/user-data.sh", {
+    db_host         = var.db_host
+    db_database     = var.db_database
+    db_username     = var.db_username
+    db_password     = var.db_password
+    laravel_repo_url = var.laravel_repo_url
+  }))
+
   tag_specifications {
     resource_type = "instance"
     tags = {

@@ -57,6 +57,8 @@ Stores `terraform.tfvars` from each folder into `backups/config-YYYYMMDD_HHmm/`.
 
 **Prerequisite:** MySQL EC2 must exist (or be restored first – see Scenario C).
 
+**Note:** The Launch Template has User Data that auto-deploys Laravel at `/var/www/kutoot` when new instances boot. Ensure `terraform/02-asg/terraform.tfvars` has `db_password` set.
+
 1. Restore `terraform.tfvars` from backup (run from kutoot-devops root):
    ```powershell
    $b = "backups/config-YYYYMMDD_HHmm"  # use your latest backup folder

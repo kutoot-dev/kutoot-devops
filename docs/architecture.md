@@ -33,7 +33,7 @@
 | ACM | 03-route53 | kutoot-cert | HTTPS certificate for domain |
 | ALB | 01-alb | kutoot-prod-alb | Application Load Balancer, HTTP/HTTPS |
 | Target Group | 01-alb | kutoot-prod-tg | Health check: /, 30s interval |
-| ASG | 02-asg | kutoot-prod-asg | Launch Template, 1–8 instances |
+| ASG | 02-asg | kutoot-prod-asg | Launch Template + User Data (auto-deploy Laravel), 1–8 instances |
 | Laravel SG | 02-asg | kutoot-prod-laravel-sg | HTTP from ALB, SSH from allowed IP |
 | MySQL | Manual | EC2 | Self-hosted MySQL, kutoot_backend |
 

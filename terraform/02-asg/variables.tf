@@ -56,3 +56,34 @@ variable "mysql_security_group_id" {
   type        = string
   default     = ""
 }
+
+# --- For User Data (auto-deploy on new instances) ---
+variable "db_host" {
+  description = "MySQL host for Laravel .env"
+  type        = string
+  default     = "172.31.45.181"
+}
+
+variable "db_database" {
+  description = "MySQL database name"
+  type        = string
+  default     = "kutoot_backend"
+}
+
+variable "db_username" {
+  description = "MySQL username"
+  type        = string
+  default     = "admin"
+}
+
+variable "db_password" {
+  description = "MySQL password (stored in user data - use tfvars, never commit)"
+  type        = string
+  sensitive   = true
+}
+
+variable "laravel_repo_url" {
+  description = "Laravel repo URL for git clone (use HTTPS; for private: https://x-access-token:TOKEN@github.com/owner/repo.git)"
+  type        = string
+  default     = "https://github.com/kutoot-dev/kutoot_backend.git"
+}
