@@ -24,4 +24,4 @@ db_database = "kutoot_backend"
 db_username = "admin"
 db_password = "YOUR_MYSQL_PASSWORD"
 
-laravel_repo_url = "https://github.com/kutoot-dev/kutoot_backend.git"
+laravel_repo_url = "https://github.com/kutoot-dev/kutoot.git"

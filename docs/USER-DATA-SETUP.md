@@ -19,11 +19,11 @@ db_host     = "172.31.45.181"
 db_database = "kutoot_backend"
 db_username = "admin"
 db_password = "YOUR_ACTUAL_MYSQL_PASSWORD"
-laravel_repo_url = "https://github.com/kutoot-dev/kutoot_backend.git"
+laravel_repo_url = "https://github.com/kutoot-dev/kutoot.git"
 ```
 
 - **db_password** – Required. Use your real MySQL password.
-- **laravel_repo_url** – For private repo: `https://x-access-token:TOKEN@github.com/kutoot-dev/kutoot_backend.git`
+- **laravel_repo_url** – For private repo: `https://x-access-token:TOKEN@github.com/kutoot-dev/kutoot.git`
 
 ## Apply Changes
 

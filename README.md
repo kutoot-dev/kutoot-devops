@@ -161,5 +161,5 @@ See **[docs/INSTANCE-DEPENDENCIES.md](docs/INSTANCE-DEPENDENCIES.md)** for full 
 
 ## Related Repos
 
-- **kutoot_backend** - Laravel API — `git clone git@github.com:kutoot-dev/kutoot_backend.git` (branch: main)
+- **kutoot** - Laravel API — `git clone git@github.com:kutoot-dev/kutoot.git` (branch: main)
 - **kutpot-frontend** - Frontend (Amplify)

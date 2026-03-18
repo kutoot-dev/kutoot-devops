@@ -91,5 +91,5 @@ variable "db_password" {
 variable "laravel_repo_url" {
   description = "Laravel repo URL for git clone (use HTTPS; for private: https://x-access-token:TOKEN@github.com/owner/repo.git)"
   type        = string
-  default     = "https://github.com/kutoot-dev/kutoot_backend.git"
+  default     = "https://github.com/kutoot-dev/kutoot.git"
 }

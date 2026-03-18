@@ -26,7 +26,7 @@ bcmath, calendar, Core, ctype, curl, date, dom, exif, gd, hash, iconv, intl, jso
 
 ## Laravel Dependencies (composer show -D)
 
-From kutoot_backend `composer.json` – installed by `composer install`:
+From kutoot `composer.json` – installed by `composer install`:
 
 - dedoc/scramble, endroid/qr-code, fakerphp/faker
 - filament/filament, filament/spatie-laravel-media-library-plugin
@@ -63,7 +63,7 @@ chmod +x deploy.sh
 ```powershell
 # From Windows
 scp -i kutoot-sql.pem scripts/deploy-laravel-ec2.sh ubuntu@<EC2_IP>:~/
-scp -i kutoot-sql.pem -r kutoot_backend/* ubuntu@<EC2_IP>:~/
+scp -i kutoot-sql.pem -r kutoot/* ubuntu@<EC2_IP>:~/
 ```
 
 ```bash

@@ -17,15 +17,15 @@ echo "=== Kutoot Laravel Deployment ==="
 # Check if Laravel files exist (from SCP or git clone)
 if [ ! -f /home/ubuntu/artisan ]; then
     echo ">>> Laravel files not in /home/ubuntu/. Cloning from Git..."
-    echo "    git@github.com:kutoot-dev/kutoot_backend.git (branch: main)"
+    echo "    git@github.com:kutoot-dev/kutoot.git (branch: main)"
     sudo mkdir -p /home/ubuntu
-    sudo git clone --branch main git@github.com:kutoot-dev/kutoot_backend.git /home/ubuntu/kutoot_backend 2>/dev/null || {
+    sudo git clone --branch main git@github.com:kutoot-dev/kutoot.git /home/ubuntu/kutoot 2>/dev/null || {
         echo "ERROR: Git clone failed. Ensure SSH key is set up for github.com."
-        echo "Alternative: scp -i kutoot-sql.pem -r kutoot_backend/* ubuntu@<IP>:/home/ubuntu/"
+        echo "Alternative: scp -i kutoot-sql.pem -r kutoot/* ubuntu@<IP>:/home/ubuntu/"
         exit 1
     }
-    sudo cp -r /home/ubuntu/kutoot_backend/. /home/ubuntu/
-    sudo rm -rf /home/ubuntu/kutoot_backend
+    sudo cp -r /home/ubuntu/kutoot/. /home/ubuntu/
+    sudo rm -rf /home/ubuntu/kutoot
 fi
 
 echo ">>> Installing PHP 8.4, Nginx, Composer..."
