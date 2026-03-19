@@ -14,9 +14,13 @@ DB_PASSWORD="${1:-CHANGE_ME}"
 
 echo "=== Kutoot Laravel Deployment ==="
 
-# Check if Laravel files exist (from SCP or git clone)
-if [ ! -f /home/ubuntu/artisan ]; then
-    echo ">>> Laravel files not in /home/ubuntu/. Cloning from Git..."
+# Resolve Laravel source (SCP creates /home/ubuntu/kutoot/ when copying folder)
+LARAVEL_SRC="/home/ubuntu"
+[ -f /home/ubuntu/kutoot/artisan ] && LARAVEL_SRC="/home/ubuntu/kutoot"
+[ -f /home/ubuntu/artisan ] && LARAVEL_SRC="/home/ubuntu"
+
+if [ ! -f "$LARAVEL_SRC/artisan" ]; then
+    echo ">>> Laravel files not found. Cloning from Git..."
     echo "    git@github.com:kutoot-dev/kutoot.git (branch: main)"
     sudo mkdir -p /home/ubuntu
     sudo git clone --branch main git@github.com:kutoot-dev/kutoot.git /home/ubuntu/kutoot 2>/dev/null || {
@@ -28,11 +32,12 @@ if [ ! -f /home/ubuntu/artisan ]; then
     sudo rm -rf /home/ubuntu/kutoot
 fi
 
-echo ">>> Installing PHP 8.4, Nginx, Composer..."
+echo ">>> Installing PHP 8.4, Node.js 20, Nginx, Composer..."
 sudo add-apt-repository ppa:ondrej/php -y 2>/dev/null || true
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt install -y \
-  nginx \
+  nginx nodejs \
   php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
   php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl php8.4-opcache \
   unzip git
@@ -76,24 +81,44 @@ sudo nginx -t
 sudo systemctl restart php8.4-fpm nginx
 
 echo ">>> Copying Laravel files..."
-sudo cp -r /home/ubuntu/* /var/www/kutoot/
+sudo cp -r "$LARAVEL_SRC"/. /var/www/kutoot/
+sudo chown -R ubuntu:ubuntu /var/www/kutoot
 cd /var/www/kutoot
 
 echo ">>> Configuring .env..."
-cp .env.example .env
+# Use .env.deploy from kutoot-devops if present (has SMS, Mail, etc.), else .env.example
+if [ -f /home/ubuntu/.env.deploy ]; then
+  cp /home/ubuntu/.env.deploy .env
+  echo "    Using env-templates/.env from kutoot-devops"
+elif [ -f .env.example ]; then
+  cp .env.example .env
+elif [ -f env.example ]; then
+  cp env.example .env
+else
+  echo "ERROR: No .env found. Copy env-templates/.env to server or ensure .env.example exists."
+  exit 1
+fi
 sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
 sed -i "s/DB_DATABASE=.*/DB_DATABASE=$DB_DATABASE/" .env
 sed -i "s/DB_USERNAME=.*/DB_USERNAME=$DB_USERNAME/" .env
-sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" .env
+sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" .env
 sed -i 's/APP_DEBUG=.*/APP_DEBUG=false/' .env
 sed -i 's/APP_ENV=.*/APP_ENV=production/' .env
+sed -i 's|APP_URL=.*|APP_URL=https://dev.kutoot.com|' .env
 
 echo ">>> Running composer install..."
 composer install --optimize-autoloader --no-dev --no-interaction
 
 echo ">>> Generating keys..."
 php artisan key:generate --force
-php artisan jwt:secret --force
+php artisan jwt:secret --force 2>/dev/null || true
+
+echo ">>> Building frontend assets..."
+npm ci
+npm run build
+
+echo ">>> Running migrations..."
+php artisan migrate --force 2>/dev/null || true
 
 echo ">>> Caching config..."
 php artisan config:cache

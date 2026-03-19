@@ -18,3 +18,4 @@ backups/
 
 # Secrets - never commit .env (use env-templates/.env.example as template)
 .env
+env-templates/.env

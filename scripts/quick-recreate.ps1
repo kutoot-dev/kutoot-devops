@@ -91,6 +91,19 @@ if ($runS3) {
     Write-Host ">>> 05-s3 skipped (no terraform.tfvars)" -ForegroundColor Gray
 }
 
+# 06-mysql-backups (optional - automated MySQL backups to S3)
+$runMysqlBackups = Test-Path (Join-Path $TERRAFORM_DIR "06-mysql-backups\terraform.tfvars")
+if ($runMysqlBackups) {
+    Write-Host ">>> 06-mysql-backups (S3 + IAM for MySQL backups)..." -ForegroundColor Yellow
+    Push-Location (Join-Path $TERRAFORM_DIR "06-mysql-backups")
+    terraform init -input=false
+    terraform apply -auto-approve
+    Pop-Location
+    Write-Host ""
+} else {
+    Write-Host ">>> 06-mysql-backups skipped (no terraform.tfvars)" -ForegroundColor Gray
+}
+
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "  INFRASTRUCTURE READY" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
