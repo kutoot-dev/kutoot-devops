@@ -37,7 +37,7 @@ sudo add-apt-repository ppa:ondrej/php -y 2>/dev/null || true
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt install -y \
-  nginx nodejs \
+  nginx nodejs supervisor \
   php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
   php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl php8.4-opcache \
   unzip git
@@ -143,9 +143,33 @@ npm run build
 echo ">>> Running migrations..."
 php artisan migrate --force 2>/dev/null || true
 
-echo ">>> Caching config..."
-php artisan config:cache
+echo ">>> Optimize (clear + cache)..."
+php artisan optimize:clear
+php artisan optimize
 php artisan storage:link
+
+echo ">>> Setting up Laravel Scheduler (crontab)..."
+(sudo crontab -u www-data -l 2>/dev/null | grep -v "artisan schedule:run" ; echo "* * * * * cd /var/www/kutoot && php artisan schedule:run >> /dev/null 2>&1") | sudo crontab -u www-data -
+
+echo ">>> Setting up Supervisor (queue:work)..."
+sudo apt-get install -y supervisor 2>/dev/null || true
+sudo tee /etc/supervisor/conf.d/kutoot-worker.conf > /dev/null << 'SUPERVISOR'
+[program:kutoot-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/kutoot/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/kutoot/storage/logs/worker.log
+stopwaitsecs=3600
+SUPERVISOR
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start kutoot-worker:*
 
 echo ">>> Setting permissions..."
 sudo chown -R www-data:www-data /var/www/kutoot

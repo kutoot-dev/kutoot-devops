@@ -6,7 +6,9 @@ When the ASG auto-scales (high CPU), **new instances deploy themselves** with no
 - `.env` from S3 (SMS, Mail, S3, Razorpay, etc.)
 - Nginx with @laravel + buffer fix (no 404 on first click)
 - Node.js + `npm run build`
-- Composer, migrations, permissions
+- Composer, migrations, `optimize:clear`, `optimize`
+- Laravel Scheduler (cron: `* * * * * php artisan schedule:run`)
+- Supervisor queue workers (`php artisan queue:work`)
 
 ## One-Time Setup
 
