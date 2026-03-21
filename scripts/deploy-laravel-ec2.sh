@@ -62,7 +62,21 @@ server {
     client_max_body_size 1024M;
 
     location / {
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files $uri $uri/ @laravel;
+    }
+
+    location @laravel {
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $document_root/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_param REQUEST_URI $request_uri;
+        include fastcgi_params;
+        fastcgi_read_timeout 120;
+
+        fastcgi_buffer_size 128k;
+        fastcgi_buffers 4 256k;
+        fastcgi_busy_buffers_size 256k;
+        fastcgi_temp_file_write_size 256k;
     }
 
     location ~ \.php$ {
@@ -71,6 +85,11 @@ server {
         include fastcgi_params;
         fastcgi_param PATH_INFO $fastcgi_path_info;
         fastcgi_read_timeout 120;
+
+        fastcgi_buffer_size 128k;
+        fastcgi_buffers 4 256k;
+        fastcgi_busy_buffers_size 256k;
+        fastcgi_temp_file_write_size 256k;
     }
 }
 NGINX
@@ -85,17 +104,19 @@ sudo cp -r "$LARAVEL_SRC"/. /var/www/kutoot/
 sudo chown -R ubuntu:ubuntu /var/www/kutoot
 cd /var/www/kutoot
 
-echo ">>> Configuring .env..."
-# Use .env.deploy from kutoot-devops if present (has SMS, Mail, etc.), else .env.example
+echo ">>> Configuring .env → /var/www/kutoot/.env..."
+# env-templates/.env is SCP'd as ~/.env.deploy by deploy-to-new-instance.ps1 (required every deployment)
 if [ -f /home/ubuntu/.env.deploy ]; then
   cp /home/ubuntu/.env.deploy .env
-  echo "    Using env-templates/.env from kutoot-devops"
+  echo "    OK: env-templates/.env deployed to /var/www/kutoot/.env"
 elif [ -f .env.example ]; then
   cp .env.example .env
+  echo "    WARN: .env.deploy not found - using .env.example (run deploy with -EnvPath)"
 elif [ -f env.example ]; then
   cp env.example .env
+  echo "    WARN: .env.deploy not found - using env.example"
 else
-  echo "ERROR: No .env found. Copy env-templates/.env to server or ensure .env.example exists."
+  echo "ERROR: No .env found. Ensure deploy-to-new-instance.ps1 copies env-templates/.env"
   exit 1
 fi
 sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
@@ -105,6 +126,8 @@ sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" .env
 sed -i 's/APP_DEBUG=.*/APP_DEBUG=false/' .env
 sed -i 's/APP_ENV=.*/APP_ENV=production/' .env
 sed -i 's|APP_URL=.*|APP_URL=https://dev.kutoot.com|' .env
+
+[ ! -f .env ] && { echo "ERROR: .env not in /var/www/kutoot"; exit 1; }
 
 echo ">>> Running composer install..."
 composer install --optimize-autoloader --no-dev --no-interaction

@@ -73,6 +73,93 @@ resource "aws_security_group_rule" "mysql_from_laravel" {
 }
 
 # -----------------------------------------------------------------------------
+# S3 Bucket for deploy config (.env) - private, instances download via IAM
+# -----------------------------------------------------------------------------
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_s3_bucket" "deploy_config" {
+  bucket = "${var.project_name}-${var.environment}-deploy-${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Name = "${local.name}-deploy-config"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "deploy_config" {
+  bucket = aws_s3_bucket.deploy_config.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "deploy_config" {
+  bucket = aws_s3_bucket.deploy_config.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# Block public access - .env must stay private
+resource "aws_s3_bucket_public_access_block" "deploy_config" {
+  bucket = aws_s3_bucket.deploy_config.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# -----------------------------------------------------------------------------
+# IAM Role for EC2 instances to read .env from S3
+# -----------------------------------------------------------------------------
+
+resource "aws_iam_role" "laravel_instance" {
+  name = "${local.name}-laravel-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "laravel_s3_deploy" {
+  name = "read-deploy-config"
+  role = aws_iam_role.laravel_instance.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = [
+          "${aws_s3_bucket.deploy_config.arn}/kutoot.env",
+          "${aws_s3_bucket.deploy_config.arn}/kutoot.tar.gz"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "laravel" {
+  name = "${local.name}-laravel-profile"
+  role = aws_iam_role.laravel_instance.name
+}
+
+# -----------------------------------------------------------------------------
 # Launch Template
 # -----------------------------------------------------------------------------
 
@@ -97,14 +184,20 @@ resource "aws_launch_template" "laravel" {
   instance_type = var.instance_type
   key_name      = var.key_name
 
+  iam_instance_profile {
+    name = aws_iam_instance_profile.laravel.name
+  }
+
   vpc_security_group_ids = [aws_security_group.laravel.id]
 
   user_data = base64encode(templatefile("${path.module}/templates/user-data.sh", {
-    db_host         = local.db_host
-    db_database     = var.db_database
-    db_username     = var.db_username
-    db_password     = var.db_password
+    db_host          = local.db_host
+    db_database      = var.db_database
+    db_username      = var.db_username
+    db_password      = var.db_password
     laravel_repo_url = var.laravel_repo_url
+    env_s3_uri       = "s3://${aws_s3_bucket.deploy_config.id}/kutoot.env"
+    code_s3_uri      = "s3://${aws_s3_bucket.deploy_config.id}/kutoot.tar.gz"
   }))
 
   tag_specifications {

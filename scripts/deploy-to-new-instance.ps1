@@ -62,26 +62,38 @@ scp -i $KeyPath $ArchivePath "ubuntu@${InstanceIP}:/home/ubuntu/kutoot.tar.gz"
 try { Remove-Item $ArchivePath -Force -ErrorAction SilentlyContinue } catch {}
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
-# Step 2: SCP deploy script
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$KutootDevopsRoot = Split-Path -Parent (Split-Path -Parent $ScriptDir)
+# Step 2: SCP deploy script (resolve paths from script location)
+$ScriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+$ScriptDir = [System.IO.Path]::GetFullPath($ScriptDir)
+$KutootDevopsRoot = [System.IO.Path]::GetFullPath((Join-Path $ScriptDir ".."))
 Write-Host ">>> Copying deploy script..." -ForegroundColor Yellow
 scp -i $KeyPath "$ScriptDir\deploy-laravel-ec2.sh" "ubuntu@${InstanceIP}:~/"
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
-# Step 2b: SCP .env if provided (prefer: -EnvPath, then env-templates/.env, then env-templates/.env.example)
+# Step 2b: SCP .env to /var/www/kutoot (REQUIRED every deployment)
+# Prefer: -EnvPath, then env-templates/.env, then env-templates/.env.example
 $EnvFile = $EnvPath
 if (-not $EnvFile) {
     $EnvCustom = Join-Path $KutootDevopsRoot "env-templates\.env"
     $EnvExample = Join-Path $KutootDevopsRoot "env-templates\.env.example"
-    if (Test-Path $EnvCustom) { $EnvFile = $EnvCustom }
-    elseif (Test-Path $EnvExample) { $EnvFile = $EnvExample }
+    if (Test-Path $EnvCustom) {
+        $EnvFile = $EnvCustom  # env-templates/.env has SMS, Mail, S3, Razorpay, etc.
+    } elseif (Test-Path $EnvExample) {
+        $EnvFile = $EnvExample
+    }
 }
-if ($EnvFile -and (Test-Path $EnvFile)) {
-    Write-Host ">>> Copying .env template (SMS, Mail, etc.)..." -ForegroundColor Yellow
-    scp -i $KeyPath $EnvFile "ubuntu@${InstanceIP}:~/.env.deploy"
-    if ($LASTEXITCODE -ne 0) { exit 1 }
+
+if (-not $EnvFile -or -not (Test-Path $EnvFile)) {
+    Write-Host "ERROR: No .env file found." -ForegroundColor Red
+    Write-Host "  Create one at: $KutootDevopsRoot\env-templates\.env" -ForegroundColor Yellow
+    Write-Host "  Or copy from:  env-templates\.env.example" -ForegroundColor Yellow
+    Write-Host "  Or specify:    -EnvPath ""C:\path\to\.env""" -ForegroundColor Yellow
+    exit 1
 }
+
+Write-Host ">>> Copying .env ($(Split-Path -Leaf $EnvFile))..." -ForegroundColor Yellow
+scp -i $KeyPath $EnvFile "ubuntu@${InstanceIP}:~/.env.deploy"
+if ($LASTEXITCODE -ne 0) { exit 1 }
 
 # Step 3: SSH, extract tarball, and run deploy
 Write-Host ">>> Running deploy on instance..." -ForegroundColor Yellow
