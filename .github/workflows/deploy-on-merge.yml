@@ -88,11 +88,14 @@ jobs:
           aws s3 cp kutoot.tar.gz "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.tar.gz" --sse AES256
 
       - name: Upload .env to S3
+        env:
+          DB_PASSWORD_SECRET: ${{ secrets.DB_PASSWORD }}
         run: |
+          sub() { if [ -n "$DB_PASSWORD_SECRET" ]; then sed "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD_SECRET|"; else cat; fi; }
           if [ -f devops/env-templates/.env ]; then
-            aws s3 cp devops/env-templates/.env "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.env" --sse AES256
+            sed 's/\r$//' devops/env-templates/.env | sub | aws s3 cp - "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.env" --sse AES256
           elif [ -n "${{ secrets.ENV_FILE_CONTENT }}" ]; then
-            echo "${{ secrets.ENV_FILE_CONTENT }}" | aws s3 cp - "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.env" --sse AES256
+            echo "${{ secrets.ENV_FILE_CONTENT }}" | sed 's/\r$//' | sub | aws s3 cp - "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.env" --sse AES256
           else
             echo "::warning::No .env found. Skipping .env upload. Instances will use existing S3 .env."
           fi

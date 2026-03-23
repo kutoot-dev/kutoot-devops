@@ -5,6 +5,9 @@
 set -e
 exec > >(tee /var/log/kutoot-userdata.log) 2>&1
 
+# On failure, write status so we can debug (curl /userdata-status.txt)
+trap 'mkdir -p /var/www/kutoot/public; echo "userdata-failed" > /var/www/kutoot/public/userdata-status.txt 2>/dev/null || true' ERR
+
 DB_HOST="${db_host}"
 DB_DATABASE="${db_database}"
 DB_USERNAME="${db_username}"
@@ -29,6 +32,9 @@ apt-get update -qq
 apt-get install -y nginx php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
   php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl php8.4-opcache unzip git awscli supervisor
 
+# Ensure npm is in PATH (NodeSource install may not update current shell)
+export PATH="/usr/bin:/usr/local/bin:$PATH"
+
 curl -sS https://getcomposer.org/installer | php
 mv composer.phar /usr/local/bin/composer
 update-alternatives --set php /usr/bin/php8.4 2>/dev/null || true
@@ -37,17 +43,27 @@ echo ">>> Fetching Laravel code..."
 mkdir -p /tmp/kutoot-deploy
 cd /tmp/kutoot-deploy
 
-# Try S3 first (reliable, no GitHub needed) - run upload-kutoot-to-s3.ps1 to update
-if [ -n "$CODE_S3_URI" ] && aws s3 cp "$CODE_S3_URI" kutoot.tar.gz 2>/dev/null; then
-  echo "    OK: Code from S3, extracting..."
-  tar -xzf kutoot.tar.gz
-  [ -d kutoot ] && mv kutoot laravel
-else
-  echo "    S3 not found, cloning from Git..."
-  git clone --branch main --depth 1 "$LARAVEL_REPO" laravel 2>/dev/null || {
-    echo "ERROR: Neither S3 code nor Git clone worked. Run upload-kutoot-to-s3.ps1 first."
+# Try S3 first (reliable, no GitHub needed) - run deploy workflow to update
+if [ -n "$CODE_S3_URI" ]; then
+  if aws s3 cp "$CODE_S3_URI" kutoot.tar.gz; then
+    echo "    OK: Code from S3, extracting..."
+    tar -xzf kutoot.tar.gz
+    [ -d kutoot ] && mv kutoot laravel
+  else
+    echo "    WARN: S3 fetch failed (check IAM, bucket), trying Git..."
+  fi
+fi
+if [ ! -d laravel ] || [ ! -f laravel/artisan ]; then
+  if [ -n "$LARAVEL_REPO" ]; then
+    echo "    Cloning from Git..."
+    git clone --branch main --depth 1 "$LARAVEL_REPO" laravel 2>/dev/null || {
+      echo "ERROR: Git clone failed (private repo? add token to laravel_repo_url)"
+      exit 1
+    }
+  else
+    echo "ERROR: No Laravel code. S3 failed and no laravel_repo_url configured."
     exit 1
-  }
+  fi
 fi
 
 [ ! -f laravel/artisan ] && { echo "ERROR: Laravel code incomplete (no artisan)"; exit 1; }
@@ -114,7 +130,8 @@ rm -rf /tmp/kutoot-deploy
 echo ">>> Configuring .env..."
 if [ -n "$ENV_S3_URI" ]; then
   if aws s3 cp "$ENV_S3_URI" .env 2>/dev/null; then
-    echo "    OK: .env from S3 ($ENV_S3_URI)"
+    echo "    OK: .env from S3"
+    sed -i 's/\r$//' .env
   else
     echo "    WARN: S3 .env failed, using .env.example"
     cp .env.example .env
@@ -122,11 +139,12 @@ if [ -n "$ENV_S3_URI" ]; then
 else
   cp .env.example .env
 fi
+[ -f .env ] && sed -i 's/\r$//' .env
 
 sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
 sed -i "s/DB_DATABASE=.*/DB_DATABASE=$DB_DATABASE/" .env
 sed -i "s/DB_USERNAME=.*/DB_USERNAME=$DB_USERNAME/" .env
-sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" .env
+[ -n "$DB_PASSWORD" ] && sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" .env
 sed -i 's/APP_DEBUG=.*/APP_DEBUG=false/' .env
 sed -i 's/APP_ENV=.*/APP_ENV=production/' .env
 sed -i 's|APP_URL=.*|APP_URL=https://dev.kutoot.com|' .env
@@ -137,8 +155,13 @@ export COMPOSER_HOME=$${COMPOSER_HOME:-/root/.composer}
 composer install --optimize-autoloader --no-dev --no-interaction
 
 echo ">>> Building frontend assets..."
-npm ci
-npm run build
+if [ -f public/build/manifest.json ]; then
+  echo "    OK: Using pre-built assets from tarball"
+else
+  export PATH="/usr/bin:/usr/local/bin:$PATH"
+  npm ci
+  npm run build
+fi
 
 echo ">>> Generating keys..."
 php artisan key:generate --force
@@ -183,4 +206,5 @@ chmod -R 775 /var/www/kutoot/bootstrap/cache
 
 systemctl restart php8.4-fpm nginx
 
+echo "userdata-complete" > /var/www/kutoot/public/userdata-status.txt
 echo "=== Kutoot User Data Complete - $(date) ==="

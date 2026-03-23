@@ -83,9 +83,10 @@ variable "db_username" {
 }
 
 variable "db_password" {
-  description = "MySQL password (stored in user data - use tfvars, never commit)"
+  description = "MySQL password. If empty, instance uses DB_PASSWORD from S3 .env (ENV_FILE_CONTENT or env-templates/.env)"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "laravel_repo_url" {
