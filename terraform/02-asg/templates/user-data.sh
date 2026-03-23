@@ -15,6 +15,9 @@ CODE_S3_URI="${code_s3_uri}"
 
 echo "=== Kutoot User Data - $(date) ==="
 
+export HOME=/root
+export COMPOSER_HOME=/root/.composer
+
 # Wait for apt lock
 while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do sleep 2; done
 
@@ -52,6 +55,9 @@ fi
 echo ">>> Setting up Nginx (with @laravel fallback + buffer fix)..."
 mkdir -p /var/www/kutoot/public
 echo "OK" > /var/www/kutoot/public/index.html
+
+# Increase worker_connections for load (default 768 not enough for 2000+ concurrent)
+sed -i 's/worker_connections [0-9]*/worker_connections 8192/' /etc/nginx/nginx.conf 2>/dev/null || true
 
 cat > /etc/nginx/sites-available/kutoot-backend << 'NGINX'
 server {
@@ -126,6 +132,8 @@ sed -i 's/APP_ENV=.*/APP_ENV=production/' .env
 sed -i 's|APP_URL=.*|APP_URL=https://dev.kutoot.com|' .env
 
 echo ">>> Running composer install..."
+export HOME=${HOME:-/root}
+export COMPOSER_HOME=${COMPOSER_HOME:-/root/.composer}
 composer install --optimize-autoloader --no-dev --no-interaction
 
 echo ">>> Building frontend assets..."

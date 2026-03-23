@@ -51,6 +51,9 @@ echo ">>> Setting up Nginx..."
 sudo mkdir -p /var/www/kutoot/public
 echo "OK" | sudo tee /var/www/kutoot/public/index.html > /dev/null
 
+# Increase worker_connections for load (default 768 not enough for 2000+ concurrent)
+sudo sed -i 's/worker_connections [0-9]*/worker_connections 8192/' /etc/nginx/nginx.conf 2>/dev/null || true
+
 sudo tee /etc/nginx/sites-available/kutoot-backend > /dev/null << 'NGINX'
 server {
     listen 80 default_server;
@@ -130,6 +133,8 @@ sed -i 's|APP_URL=.*|APP_URL=https://dev.kutoot.com|' .env
 [ ! -f .env ] && { echo "ERROR: .env not in /var/www/kutoot"; exit 1; }
 
 echo ">>> Running composer install..."
+export HOME=${HOME:-/root}
+export COMPOSER_HOME=${COMPOSER_HOME:-/root/.composer}
 composer install --optimize-autoloader --no-dev --no-interaction
 
 echo ">>> Generating keys..."

@@ -26,6 +26,16 @@ mysql -e "FLUSH PRIVILEGES;"
 if [ -f /etc/mysql/mysql.conf.d/mysqld.cnf ]; then
   sed -i 's/^bind-address\s*=\s*.*/bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
 fi
+
+# High connection load (2000+ concurrent users / 1 lakh requests)
+cat > /etc/mysql/mysql.conf.d/99-load-tuning.cnf << 'MYSQL'
+[mysqld]
+max_connections = 5000
+wait_timeout = 300
+interactive_timeout = 300
+thread_cache_size = 128
+MYSQL
+
 systemctl restart mysql
 
 echo "=== MySQL User Data Complete - $(date) ==="

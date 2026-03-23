@@ -3,10 +3,12 @@
 #
 # Run when: code changes, .env changes, or before instance refresh
 # Usage: .\deploy-for-autoscale.ps1
-#        .\deploy-for-autoscale.ps1 -Refresh   # Also trigger instance refresh
+#        .\deploy-for-autoscale.ps1 -Refresh
+#        .\deploy-for-autoscale.ps1 -KutootPath "C:\path\to\kutoot"   # If kutoot is elsewhere
 
 param(
-    [switch]$Refresh
+    [switch]$Refresh,
+    [string]$KutootPath = "C:\Users\aDMIN\Desktop\kutoot"
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,7 +18,7 @@ Write-Host "=== Deploy for Auto-Scale ===" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. Upload code
-& "$ScriptDir\upload-kutoot-to-s3.ps1"
+& "$ScriptDir\upload-kutoot-to-s3.ps1" -KutootPath $KutootPath
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 # 2. Upload .env
