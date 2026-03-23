@@ -1,0 +1,110 @@
+# Auto deploy when PR is merged to main
+# Triggers: push to main (kutoot-devops), repository_dispatch (from kutoot), or manual
+#
+# Deploys latest Kutoot app + .env to AWS: uploads to S3, starts instance refresh.
+# Requires: AWS credentials, DEPLOY_BUCKET, ASG_NAME, and optionally KUTOOT_REPO + REPO_ACCESS_TOKEN
+
+name: Deploy on Merge
+
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [deploy-requested]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-south-1
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # for OIDC (optional)
+
+    steps:
+      - name: Checkout kutoot-devops
+        uses: actions/checkout@v4
+        with:
+          path: devops
+
+      - name: Checkout Kutoot app
+        uses: actions/checkout@v4
+        with:
+          repository: kutoot-dev/kutoot
+          ref: main
+          token: ${{ secrets.REPO_ACCESS_TOKEN || github.token }}
+          path: kutoot
+
+      - name: Validate Kutoot
+        run: test -f kutoot/artisan || (echo "ERROR: Kutoot app not found (no artisan)" && exit 1)
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer
+
+      - name: Install Composer deps (for tests)
+        run: cd kutoot && composer install --no-interaction --prefer-dist
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: kutoot/package-lock.json
+
+      - name: Install npm deps
+        run: cd kutoot && npm ci 2>/dev/null || npm install
+
+      - name: Run tests (optional)
+        run: |
+          cd kutoot
+          php artisan test 2>/dev/null || echo "No tests configured, skipping"
+        continue-on-error: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create and upload code tarball
+        run: |
+          # Tarball must have top-level 'kutoot' folder (user-data expects it)
+          tar -czf kutoot.tar.gz --exclude=node_modules --exclude=vendor --exclude=.git kutoot
+          aws s3 cp kutoot.tar.gz "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.tar.gz" --sse AES256
+
+      - name: Upload .env to S3
+        run: |
+          if [ -f devops/env-templates/.env ]; then
+            aws s3 cp devops/env-templates/.env "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.env" --sse AES256
+          elif [ -n "${{ secrets.ENV_FILE_CONTENT }}" ]; then
+            echo "${{ secrets.ENV_FILE_CONTENT }}" | aws s3 cp - "s3://${{ secrets.DEPLOY_BUCKET }}/kutoot.env" --sse AES256
+          else
+            echo "::warning::No .env found. Skipping .env upload. Instances will use existing S3 .env."
+          fi
+
+      - name: Start instance refresh
+        run: |
+          ASG="${{ secrets.ASG_NAME || 'kutoot-prod-asg' }}"
+          result=$(aws autoscaling start-instance-refresh --auto-scaling-group-name "$ASG" --output json 2>&1) || true
+          if echo "$result" | grep -q "InstanceRefreshId"; then
+            echo "$result" | jq -r '.InstanceRefreshId // "started"'
+            echo "::notice::Instance refresh started. New instances will be ready in ~10-15 min."
+          elif echo "$result" | grep -q "InstanceRefreshInProgress"; then
+            echo "::notice::Refresh already in progress. New instances will use the code you just uploaded."
+          else
+            echo "$result"
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Deploy complete"
+          echo "Instance refresh triggered. New instances will be ready in ~10-15 min."

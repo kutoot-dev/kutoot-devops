@@ -1,0 +1,22 @@
+# Copy this file to kutoot repo: .github/workflows/trigger-deploy.yml
+# When PR is merged to kutoot main, this triggers deploy-on-merge in kutoot-devops
+#
+# In kutoot repo, add secret: DEVOPS_TRIGGER_TOKEN (PAT with repo scope for kutoot-devops)
+
+name: Trigger Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger kutoot-devops deploy
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.DEVOPS_TRIGGER_TOKEN }}" \
+            https://api.github.com/repos/kutoot-dev/kutoot-devops/dispatches \
+            -d '{"event_type":"deploy-requested"}'
