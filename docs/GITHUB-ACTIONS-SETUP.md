@@ -25,7 +25,7 @@ Add these **repository secrets**:
 | `AWS_SECRET_ACCESS_KEY` | Yes | AWS IAM secret key |
 | `DEPLOY_BUCKET` | Yes | S3 bucket name (e.g. `kutoot-prod-deploy-408110214942`) |
 | `ASG_NAME` | No | Auto Scaling Group name (default: `kutoot-prod-asg`) |
-| `REPO_ACCESS_TOKEN` | If kutoot is private | PAT with `repo` scope to checkout kutoot |
+| `REPO_ACCESS_TOKEN` | **Yes** | PAT with `repo` scope to checkout kutoot (GITHUB_TOKEN cannot access other repos) |
 | `ENV_FILE_CONTENT` | If no env-templates/.env | Full `.env` content (instances use S3 .env) |
 | `COMPOSER_AUTH` | If private Composer packages | JSON auth for composer |
 

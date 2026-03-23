@@ -24,6 +24,14 @@ jobs:
       id-token: write  # for OIDC (optional)
 
     steps:
+      - name: Check required secrets
+        run: |
+          if [ -z "${{ secrets.REPO_ACCESS_TOKEN }}" ]; then
+            echo "::error::REPO_ACCESS_TOKEN is required. Add it in kutoot-devops Settings > Secrets."
+            echo "Create a PAT at https://github.com/settings/tokens with 'repo' scope (read kutoot)."
+            exit 1
+          fi
+
       - name: Checkout kutoot-devops
         uses: actions/checkout@v4
         with:
@@ -34,7 +42,7 @@ jobs:
         with:
           repository: kutoot-dev/kutoot
           ref: main
-          token: ${{ secrets.REPO_ACCESS_TOKEN || github.token }}
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
           path: kutoot
 
       - name: Validate Kutoot
