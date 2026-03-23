@@ -38,7 +38,8 @@ jobs:
           path: kutoot
 
       - name: Validate Kutoot
-        run: test -f kutoot/artisan || (echo "ERROR: Kutoot app not found (no artisan)" && exit 1)
+        run: |
+          test -f kutoot/artisan || (echo "ERROR: Kutoot app not found" && exit 1)
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
