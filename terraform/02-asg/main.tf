@@ -220,8 +220,8 @@ resource "aws_autoscaling_group" "laravel" {
   name                = "${local.name}-asg"
   vpc_zone_identifier = data.terraform_remote_state.alb.outputs.subnet_ids
   target_group_arns   = [data.terraform_remote_state.alb.outputs.target_group_arn]
-  health_check_type   = "ELB"
-  health_check_grace_period = 14400
+  health_check_type         = "ELB"
+  health_check_grace_period = 600 # 10 min - enough for user-data (composer, npm, Laravel) to boot
 
   min_size         = var.asg_min_size
   max_size         = var.asg_max_size

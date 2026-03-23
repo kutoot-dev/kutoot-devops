@@ -132,8 +132,8 @@ sed -i 's/APP_ENV=.*/APP_ENV=production/' .env
 sed -i 's|APP_URL=.*|APP_URL=https://dev.kutoot.com|' .env
 
 echo ">>> Running composer install..."
-export HOME=${HOME:-/root}
-export COMPOSER_HOME=${COMPOSER_HOME:-/root/.composer}
+export HOME=$${HOME:-/root}
+export COMPOSER_HOME=$${COMPOSER_HOME:-/root/.composer}
 composer install --optimize-autoloader --no-dev --no-interaction
 
 echo ">>> Building frontend assets..."

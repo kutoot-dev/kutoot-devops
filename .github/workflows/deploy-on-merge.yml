@@ -15,6 +15,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build-and-deploy:
@@ -99,7 +100,10 @@ jobs:
       - name: Start instance refresh
         run: |
           ASG="${{ secrets.ASG_NAME || 'kutoot-prod-asg' }}"
-          result=$(aws autoscaling start-instance-refresh --auto-scaling-group-name "$ASG" --output json 2>&1) || true
+          # InstanceWarmup=300 (5 min), MinHealthyPercentage=90 - replace old instances with fresh ones in ~10-15 min
+          result=$(aws autoscaling start-instance-refresh --auto-scaling-group-name "$ASG" \
+            --preferences '{"InstanceWarmup":300,"MinHealthyPercentage":90}' \
+            --output json 2>&1) || true
           if echo "$result" | grep -q "InstanceRefreshId"; then
             echo "$result" | jq -r '.InstanceRefreshId // "started"'
             echo "::notice::Instance refresh started. New instances will be ready in ~10-15 min."

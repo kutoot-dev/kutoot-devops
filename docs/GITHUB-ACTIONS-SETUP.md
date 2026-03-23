@@ -92,3 +92,13 @@ To deploy when PRs are merged to **kutoot** (the app), add a trigger workflow in
 3. Open the **Instance refresh** tab and inspect status (Pending, InProgress, Successful, Failed)
 4. If refresh failed: check EC2 **Launch template**, **User data** (downloads from S3), and **Security groups**
 5. If refresh is stuck: cancel it and re-run the deploy workflow
+
+### Fast instance replacement (~10–15 min)
+
+The workflow uses `InstanceWarmup=300` (5 min). The ASG `health_check_grace_period` should be 600 (10 min) so new instances are checked sooner. If yours is 14400 (4 hours), run in `terraform/02-asg`:
+
+```bash
+terraform apply
+```
+
+Then re-run deploy. Old instances will be replaced with fresh ones in ~10–15 min.
