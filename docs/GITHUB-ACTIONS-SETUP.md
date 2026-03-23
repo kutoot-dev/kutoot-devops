@@ -67,9 +67,9 @@ To deploy when PRs are merged to **kutoot** (the app), add a trigger workflow in
 1. Checkout kutoot-devops and kutoot (app)
 2. Validate Kutoot (artisan exists)
 3. Install PHP + Composer, Node + npm
-4. Run tests (optional, continues on failure)
+4. Build frontend assets (`npm run build`)
 5. Configure AWS
-6. Create tarball (matches upload-kutoot-to-s3.ps1 format)
+6. Create tarball (includes built assets; matches upload-kutoot-to-s3.ps1 format)
 7. Upload `kutoot.tar.gz` to S3
 8. Upload `.env` from env-templates or `ENV_FILE_CONTENT` secret
 9. Start instance refresh on the ASG
@@ -82,3 +82,13 @@ To deploy when PRs are merged to **kutoot** (the app), add a trigger workflow in
 | "Access Denied" on S3 | Check IAM has `s3:PutObject` on the bucket. |
 | Instance refresh fails | Check IAM has `autoscaling:StartInstanceRefresh`. |
 | No .env uploaded | Add `env-templates/.env` in kutoot-devops or set `ENV_FILE_CONTENT` secret. |
+| "Refresh already in progress" | AWS allows only one refresh at a time. The running refresh will use the code you just uploaded when new instances boot. Wait for it to finish or cancel in the AWS Console. |
+| New instances not spinning | Check ASG desired capacity is > 0. In AWS Console > EC2 > Auto Scaling Groups > your ASG: verify Desired/Min/Max. If Desired=0, set it to 1+. Check instance refresh status for failures. |
+
+### If instances don't spin up
+
+1. **AWS Console** → EC2 → Auto Scaling Groups → select your ASG
+2. Ensure **Desired capacity** is at least 1
+3. Open the **Instance refresh** tab and inspect status (Pending, InProgress, Successful, Failed)
+4. If refresh failed: check EC2 **Launch template**, **User data** (downloads from S3), and **Security groups**
+5. If refresh is stuck: cancel it and re-run the deploy workflow

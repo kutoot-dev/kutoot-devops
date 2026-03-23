@@ -70,11 +70,8 @@ jobs:
       - name: Install npm deps
         run: cd kutoot && npm ci 2>/dev/null || npm install
 
-      - name: Run tests (optional)
-        run: |
-          cd kutoot
-          php artisan test 2>/dev/null || echo "No tests configured, skipping"
-        continue-on-error: true
+      - name: Build frontend assets
+        run: cd kutoot && npm run build
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -113,7 +110,17 @@ jobs:
             exit 1
           fi
 
+      - name: Show instance refresh & ASG status
+        run: |
+          ASG="${{ secrets.ASG_NAME || 'kutoot-prod-asg' }}"
+          echo "## Instance refresh status"
+          aws autoscaling describe-instance-refreshes --auto-scaling-group-name "$ASG" --max-records 3 --output table 2>/dev/null || true
+          echo ""
+          echo "## ASG capacity"
+          aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names "$ASG" --query "AutoScalingGroups[0].{Desired:DesiredCapacity,Min:MinSize,Max:MaxSize,Instances:length(Instances)}" --output table 2>/dev/null || true
+
       - name: Summary
         run: |
           echo "## Deploy complete"
-          echo "Instance refresh triggered. New instances will be ready in ~10-15 min."
+          echo "Code uploaded to S3. Instance refresh triggered (or already running)."
+          echo "Check AWS Console > EC2 > Auto Scaling Groups > instance refresh for progress."
