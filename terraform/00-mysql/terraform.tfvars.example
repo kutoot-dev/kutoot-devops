@@ -1,15 +1,33 @@
 # Copy to terraform.tfvars: cp terraform.tfvars.example terraform.tfvars
-# Run FIRST before 01-alb and 02-asg
+# Run FIRST before 01-alb and 02-asg (then apply 02-asg so mysql_from_laravel opens 3306 from Laravel SG)
+#
+# Order with backups: apply terraform/06-mysql-backups first, then set instance_profile_name below.
 
 aws_region   = "ap-south-1"
 project_name = "kutoot"
 environment  = "prod"
 
-key_name = "kutoot-sql"
-allowed_ssh_cidr = "101.0.63.108/32"
-
 instance_type = "t3.medium"
 
-db_database = "kutoot_backend"
-db_username = "admin"
-db_password = "YOUR_MYSQL_PASSWORD"
+# SSM Session Manager (backup role includes SSM after 06-mysql-backups). Prefer this profile:
+instance_profile_name = "kutoot-prod-mysql-backup-profile"
+
+# Optional: omit instance_profile_name to create a minimal SSM-only profile in this module.
+
+# key_name  = "kutoot-sql"  # optional; omit for SSM-only
+enable_ssh            = false
+# allowed_ssh_cidr    = "101.0.63.108/32"  # only if enable_ssh = true
+
+# Prefer private subnet with NAT; leave empty for default subnet (still use associate_public_ip_address = false)
+# subnet_id                       = "subnet-xxxxxxxx"
+associate_public_ip_address = false
+
+# During mysqldump restore from your workstation only — remove after cutover:
+# mysql_bootstrap_ingress_cidrs = ["203.0.113.10/32"]
+
+db_database  = "kutoot_backend"
+db_username  = "kutoot_app"
+db_password  = "YOUR_STRONG_RANDOM_PASSWORD"
+# db_user_host = "%"  # optional tighten, e.g. 172.31.%
+
+vpc_id = ""

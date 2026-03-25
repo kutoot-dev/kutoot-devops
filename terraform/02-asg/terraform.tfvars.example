@@ -21,7 +21,7 @@ asg_desired_capacity = 1
 
 # --- User Data (auto-deploys Laravel on new instances) ---
 db_database = "kutoot_backend"
-db_username = "admin"
+db_username  = "kutoot_app"
 # Set here OR use DB_PASSWORD GitHub secret (leave empty to use secret + S3 .env)
 db_password = "YOUR_MYSQL_PASSWORD"
 

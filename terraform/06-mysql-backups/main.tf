@@ -89,6 +89,12 @@ resource "aws_iam_role_policy" "mysql_backup" {
   })
 }
 
+# Session Manager (no SSH required on MySQL instance)
+resource "aws_iam_role_policy_attachment" "mysql_backup_ssm" {
+  role       = aws_iam_role.mysql_backup.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_instance_profile" "mysql_backup" {
   name = "${local.name}-mysql-backup-profile"
   role = aws_iam_role.mysql_backup.name

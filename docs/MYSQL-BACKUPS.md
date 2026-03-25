@@ -21,8 +21,13 @@ terraform apply -auto-approve
 
 ### 2. Attach IAM role to MySQL instance
 
+The backup IAM role includes **SSM (Session Manager)** so you can administer MySQL without a public IP.
+
+**Preferred:** in [terraform/00-mysql](terraform/00-mysql), set `instance_profile_name = "kutoot-prod-mysql-backup-profile"` (see `terraform.tfvars.example`) and apply `00-mysql` so the instance launches with this profile.
+
+**Manual attach (legacy):**
+
 ```powershell
-# Get MySQL instance ID from AWS Console or:
 $instanceId = aws ec2 describe-instances --region ap-south-1 --filters "Name=tag:Name,Values=kutoot-prod-mysql" "Name=instance-state-name,Values=running" --query "Reservations[0].Instances[0].InstanceId" --output text
 
 aws ec2 associate-iam-instance-profile --region ap-south-1 --instance-id $instanceId --iam-instance-profile Name=kutoot-prod-mysql-backup-profile
@@ -35,7 +40,7 @@ cd C:\Users\aDMIN\Desktop\kutoot-devops\scripts
 .\setup-mysql-backup.ps1 -MySQLIP 13.235.24.13 -MySQLPassword root123 -KeyPath "C:\Users\aDMIN\Desktop\kutoot-db\kutoot-sql.pem"
 ```
 
-Replace `13.235.24.13` with your MySQL instance public IP.
+Use the instance **private IP** (or SSM port forwarding to `127.0.0.1` if MySQL listens only on private ENI). Prefer **AWS Systems Manager Session Manager** instead of SSH when the DB has no public IP.
 
 ## Verify
 

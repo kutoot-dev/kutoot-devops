@@ -27,7 +27,7 @@ Add these **repository secrets**:
 | `ASG_NAME` | No | Auto Scaling Group name (default: `kutoot-prod-asg`) |
 | `REPO_ACCESS_TOKEN` | **Yes** | PAT with `repo` scope to checkout kutoot (GITHUB_TOKEN cannot access other repos) |
 | `DB_PASSWORD` | If not using Terraform | DB password injected into uploaded `.env`. Use when `db_password` is empty in Terraform. |
-| `ENV_FILE_CONTENT` | If no env-templates/.env | Full `.env` content. Use **LF line endings only** (no CRLF/^M). Include `DB_PASSWORD=root123` if not using Terraform. |
+| `ENV_FILE_CONTENT` | If no env-templates/.env | Full `.env` content. Use **LF line endings only** (no CRLF/^M). Set `DB_USERNAME` (e.g. `kutoot_app`) and `DB_PASSWORD` to match hardened MySQL. |
 | `COMPOSER_AUTH` | If private Composer packages | JSON auth for composer |
 
 ### 2. Get deploy bucket and ASG name

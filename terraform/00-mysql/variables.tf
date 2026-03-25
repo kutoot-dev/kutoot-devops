@@ -17,14 +17,21 @@ variable "environment" {
 }
 
 variable "key_name" {
-  description = "EC2 key pair for SSH"
+  description = "EC2 key pair name (optional if using SSM only)"
   type        = string
+  default     = ""
+}
+
+variable "enable_ssh" {
+  description = "If true, allow SSH from allowed_ssh_cidr. Prefer false + SSM."
+  type        = bool
+  default     = false
 }
 
 variable "allowed_ssh_cidr" {
-  description = "CIDR allowed for SSH"
+  description = "CIDR for SSH when enable_ssh is true (never use 0.0.0.0/0)"
   type        = string
-  default     = "0.0.0.0/0"
+  default     = ""
 }
 
 variable "instance_type" {
@@ -40,19 +47,49 @@ variable "db_database" {
 }
 
 variable "db_username" {
-  description = "MySQL username"
+  description = "MySQL application user (Laravel); GRANT only on db_database"
   type        = string
-  default     = "admin"
+  default     = "kutoot_app"
+}
+
+variable "db_user_host" {
+  description = "MySQL user host pattern (e.g. % or 172.31.%%). SG is primary access control."
+  type        = string
+  default     = "%"
 }
 
 variable "db_password" {
-  description = "MySQL password"
+  description = "MySQL password for db_username"
   type        = string
   sensitive   = true
 }
 
 variable "vpc_id" {
   description = "VPC ID (empty = default VPC)"
+  type        = string
+  default     = ""
+}
+
+variable "subnet_id" {
+  description = "Subnet ID for MySQL (empty = AWS default subnet in VPC). Prefer private subnet with NAT."
+  type        = string
+  default     = ""
+}
+
+variable "associate_public_ip_address" {
+  description = "Must be false for DB tier (no public IPv4)"
+  type        = bool
+  default     = false
+}
+
+variable "mysql_bootstrap_ingress_cidrs" {
+  description = "Optional /32 CIDRs for temporary 3306 during migration; remove after cutover and apply again"
+  type        = list(string)
+  default     = []
+}
+
+variable "instance_profile_name" {
+  description = "Existing EC2 instance profile (e.g. kutoot-prod-mysql-backup-profile from 06-mysql-backups). If empty, creates SSM-only profile here."
   type        = string
   default     = ""
 }

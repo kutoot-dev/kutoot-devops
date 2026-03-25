@@ -77,9 +77,9 @@ variable "db_database" {
 }
 
 variable "db_username" {
-  description = "MySQL username"
+  description = "MySQL username for Laravel .env (match 00-mysql db_username)"
   type        = string
-  default     = "admin"
+  default     = "kutoot_app"
 }
 
 variable "db_password" {
