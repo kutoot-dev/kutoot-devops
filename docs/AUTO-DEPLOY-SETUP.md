@@ -9,7 +9,7 @@ When the ASG auto-scales (high CPU), **new instances deploy themselves** with no
 - Nginx: global `conf.d` + site `server` **large header buffers** (Laravel cookies); `@laravel` routing + FastCGI buffers
 - Node.js + `npm run build`
 - Composer, migrations, then **`php artisan optimize:clear`** and **`php artisan optimize`** (mandatory on every deploy boot so route/config/view caches match the current `.env` and code—avoids stale routes such as **404 on `/admin`**)
-- Laravel Scheduler (cron: `* * * * * php artisan schedule:run`)
+- Laravel Scheduler — **every** new instance gets `* * * * * cd /var/www/kutoot && php artisan schedule:run` in **`www-data`** crontab (same as `scripts/deploy-laravel-ec2.sh`). If a task must run **only once** cluster-wide, use Laravel **`onOneServer()`** with **Redis** cache (see Laravel docs).
 - Supervisor queue workers (`php artisan queue:work`)
 
 ## One-Time Setup

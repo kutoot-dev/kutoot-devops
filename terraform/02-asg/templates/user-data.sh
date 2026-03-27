@@ -215,8 +215,9 @@ php artisan optimize:clear
 php artisan optimize
 php artisan storage:link
 
-echo ">>> Setting up Laravel Scheduler (crontab)..."
-(crontab -l 2>/dev/null | grep -v "artisan schedule:run" ; echo "* * * * * cd /var/www/kutoot && php artisan schedule:run >> /dev/null 2>&1") | crontab -
+# Every Laravel ASG instance runs the scheduler (each has this crontab). Use schedule onOneServer + Redis if tasks must not duplicate across instances.
+echo ">>> Setting up Laravel Scheduler (crontab, user www-data)..."
+(crontab -u www-data -l 2>/dev/null | grep -v "artisan schedule:run" ; echo "* * * * * cd /var/www/kutoot && php artisan schedule:run >> /dev/null 2>&1") | crontab -u www-data -
 
 echo ">>> Setting up Supervisor (queue:work)..."
 systemctl enable supervisor
