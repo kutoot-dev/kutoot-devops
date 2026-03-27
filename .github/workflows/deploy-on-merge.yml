@@ -130,4 +130,5 @@ jobs:
         run: |
           echo "## Deploy complete"
           echo "Code uploaded to S3. Instance refresh triggered (or already running)."
+          echo "New instances run user-data: composer, migrations, **optimize:clear**, **optimize** (Laravel prod caches)."
           echo "Check AWS Console > EC2 > Auto Scaling Groups > instance refresh for progress."

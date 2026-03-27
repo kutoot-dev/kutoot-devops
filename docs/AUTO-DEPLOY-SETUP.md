@@ -6,7 +6,7 @@ When the ASG auto-scales (high CPU), **new instances deploy themselves** with no
 - `.env` from S3 (SMS, Mail, S3, Razorpay, etc.)
 - Nginx with @laravel + buffer fix (no 404 on first click)
 - Node.js + `npm run build`
-- Composer, migrations, `optimize:clear`, `optimize`
+- Composer, migrations, then **`php artisan optimize:clear`** and **`php artisan optimize`** (mandatory on every deploy boot so route/config/view caches match the current `.env` and code—avoids stale routes such as **404 on `/admin`**)
 - Laravel Scheduler (cron: `* * * * * php artisan schedule:run`)
 - Supervisor queue workers (`php artisan queue:work`)
 
@@ -63,7 +63,8 @@ laravel_repo_url = "https://x-access-token:TOKEN@github.com/kutoot-dev/kutoot.gi
 4. **Downloads code from S3** (kutoot.tar.gz) – no Git needed
 5. Downloads `.env` from S3
 6. Runs `composer install`, `npm run build`, migrations
-7. Instance becomes healthy → ALB sends traffic
+7. Runs **`optimize:clear`** then **`optimize`** (rebuilds config/route/event/view caches for production)
+8. Instance becomes healthy → ALB sends traffic
 
 No SSH, no manual deploy.
 
@@ -80,6 +81,12 @@ Existing instances (already running) keep their current config. To apply the new
    aws autoscaling start-instance-refresh --auto-scaling-group-name kutoot-prod-asg
    ```
 2. Or manually update each instance (SSH + deploy script).
+
+**If you change `.env` or code on a running instance without replacing it**, run as `www-data`:
+
+`php artisan optimize:clear && php artisan optimize`
+
+Otherwise cached routes/config can disagree with the live app.
 
 ## Verify
 

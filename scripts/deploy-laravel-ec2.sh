@@ -151,7 +151,8 @@ npm run build
 echo ">>> Running migrations..."
 php artisan migrate --force 2>/dev/null || true
 
-echo ">>> Optimize (clear + cache)..."
+# Clear then rebuild Laravel caches after .env and schema are in place (required in prod).
+echo ">>> Optimize (optimize:clear + optimize)..."
 php artisan optimize:clear
 php artisan optimize
 php artisan storage:link

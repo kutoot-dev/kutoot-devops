@@ -200,7 +200,9 @@ php artisan jwt:secret --force 2>/dev/null || true
 echo ">>> Running migrations..."
 php artisan migrate --force 2>/dev/null || true
 
-echo ">>> Optimize (clear + cache)..."
+# Production caches: always clear then rebuild after .env + migrations are final.
+# Skipping this causes stale routes/config (e.g. 404 on /admin) or wrong DB settings.
+echo ">>> Optimize (optimize:clear + optimize)..."
 php artisan optimize:clear
 php artisan optimize
 php artisan storage:link
