@@ -84,8 +84,9 @@ server {
     server_name _;
 
     client_max_body_size 1024M;
-    client_header_buffer_size 16k;
-    large_client_header_buffers 4 32k;
+    # Default nginx buffers are tiny; Laravel/Filament cookies + session can exceed them (400 Header/Cookie Too Large)
+    client_header_buffer_size 32k;
+    large_client_header_buffers 8 64k;
 
     location / {
         try_files $uri $uri/ @laravel;

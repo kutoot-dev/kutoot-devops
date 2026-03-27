@@ -55,3 +55,17 @@ If user-data keeps failing, deploy manually:
 1. SSH to the instance.
 2. Run the steps from `user-data.sh` by hand, or use `scripts/deploy-laravel-ec2.sh` if available.
 3. See `docs/FIX-EMPTY-INSTANCE.md` for details.
+
+## 6. `400 Request Header Or Cookie Too Large` (nginx)
+
+Nginx rejects the request when the **Cookie** (or other headers) exceed its buffer limits. Laravel/Filament session cookies can grow after login.
+
+**In this repo**, `terraform/02-asg/templates/user-data.sh` sets `client_header_buffer_size` and `large_client_header_buffers` on the `kutoot-backend` site. **New instances** get this from user-data; **old instances** keep the old nginx config until you **instance refresh** or edit the site by hand:
+
+```bash
+sudo nano /etc/nginx/sites-available/kutoot-backend
+# Ensure: client_header_buffer_size 32k; large_client_header_buffers 8 64k;
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+If it still happens, reduce session payload in the app (avoid huge data in session) or inspect cookie size in DevTools → Application → Cookies.
