@@ -75,6 +75,8 @@ resource "aws_lb" "main" {
   subnets            = local.subnet_ids
 
   enable_deletion_protection = false
+  # Long uploads / slow clients (default 60s is tight for large bodies)
+  idle_timeout = 120
 
   tags = {
     Name = "${local.name}-alb"
@@ -90,6 +92,13 @@ resource "aws_lb_target_group" "main" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = local.vpc_id
+
+  # Laravel file sessions: same user must hit the same instance unless SESSION_DRIVER=database/redis
+  stickiness {
+    type            = "lb_cookie"
+    cookie_duration = 86400
+    enabled         = true
+  }
 
   health_check {
     enabled             = true

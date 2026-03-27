@@ -55,6 +55,12 @@ echo "OK" | sudo tee /var/www/kutoot/public/index.html > /dev/null
 # Increase worker_connections for load (default 768 not enough for 2000+ concurrent)
 sudo sed -i 's/worker_connections [0-9]*/worker_connections 8192/' /etc/nginx/nginx.conf 2>/dev/null || true
 
+# Global http {} defaults for all vhosts (production cookie/header limits)
+sudo tee /etc/nginx/conf.d/99-kutoot-large-headers.conf > /dev/null << 'CONF'
+client_header_buffer_size 32k;
+large_client_header_buffers 8 64k;
+CONF
+
 sudo tee /etc/nginx/sites-available/kutoot-backend > /dev/null << 'NGINX'
 server {
     listen 80 default_server;

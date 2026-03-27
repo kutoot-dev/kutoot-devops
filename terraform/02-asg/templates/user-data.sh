@@ -75,6 +75,13 @@ echo "OK" > /var/www/kutoot/public/index.html
 # Increase worker_connections for load (default 768 not enough for 2000+ concurrent)
 sed -i 's/worker_connections [0-9]*/worker_connections 8192/' /etc/nginx/nginx.conf 2>/dev/null || true
 
+# Global http {} defaults (all vhosts): large Laravel/Filament session cookies
+cat > /etc/nginx/conf.d/99-kutoot-large-headers.conf << 'CONF'
+# Kutoot production — avoid 400 "Request Header Or Cookie Too Large" (nginx defaults are ~1–4KB)
+client_header_buffer_size 32k;
+large_client_header_buffers 8 64k;
+CONF
+
 cat > /etc/nginx/sites-available/kutoot-backend << 'NGINX'
 server {
     listen 80 default_server;

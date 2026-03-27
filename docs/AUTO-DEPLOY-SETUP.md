@@ -1,10 +1,12 @@
 # Auto-Deploy on Scale (Fully Automated)
 
+**Production networking (ALB stickiness, Nginx header buffers):** see [PRODUCTION-ALB-NGINX.md](PRODUCTION-ALB-NGINX.md).
+
 When the ASG auto-scales (high CPU), **new instances deploy themselves** with no manual steps. Each new instance gets:
 
 - **Laravel code from S3** (no Git/internet needed)
 - `.env` from S3 (SMS, Mail, S3, Razorpay, etc.)
-- Nginx with @laravel + buffer fix (no 404 on first click)
+- Nginx: global `conf.d` + site `server` **large header buffers** (Laravel cookies); `@laravel` routing + FastCGI buffers
 - Node.js + `npm run build`
 - Composer, migrations, then **`php artisan optimize:clear`** and **`php artisan optimize`** (mandatory on every deploy boot so route/config/view caches match the current `.env` and code—avoids stale routes such as **404 on `/admin`**)
 - Laravel Scheduler (cron: `* * * * * php artisan schedule:run`)
