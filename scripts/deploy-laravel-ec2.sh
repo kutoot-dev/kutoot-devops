@@ -5,9 +5,10 @@
 set -e
 
 # ============ CONFIGURE THESE ============
-DB_HOST="172.31.45.181"
+# Match terraform/02-asg db_* and MySQL (private IP changes per instance)
+DB_HOST="172.31.39.112"
 DB_DATABASE="kutoot_backend"
-DB_USERNAME="admin"
+DB_USERNAME="kutoot_app"
 # Set password: replace CHANGE_ME or run: ./deploy-laravel-ec2.sh your_password
 DB_PASSWORD="${1:-CHANGE_ME}"
 # =========================================
@@ -63,6 +64,8 @@ server {
     server_name _;
 
     client_max_body_size 1024M;
+    client_header_buffer_size 16k;
+    large_client_header_buffers 4 32k;
 
     location / {
         try_files $uri $uri/ @laravel;

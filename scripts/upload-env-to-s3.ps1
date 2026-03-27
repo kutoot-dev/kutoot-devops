@@ -41,3 +41,4 @@ if (-not $Bucket) {
 Write-Host ">>> Uploading .env to s3://$Bucket/kutoot.env" -ForegroundColor Cyan
 aws s3 cp $EnvFile "s3://$Bucket/kutoot.env" --sse AES256
 Write-Host ">>> Done. New ASG instances will use this .env on boot." -ForegroundColor Green
+Write-Host "    Tip: if DB_PASSWORD contains # or !, use DB_PASSWORD=`"....`" in the file (unquoted lines break .env parsing)." -ForegroundColor DarkGray

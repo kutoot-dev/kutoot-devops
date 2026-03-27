@@ -4,14 +4,28 @@ Use this as a checklist when setting up `.env` on the server.
 
 ---
 
+## Auto Scaling Group (S3 source of truth)
+
+For ASG instances, **`kutoot.env` in the deploy S3 bucket** is copied on boot (see `terraform/02-asg` user-data). After you edit `env-templates/.env` locally, upload:
+
+`.\scripts\upload-env-to-s3.ps1`
+
+**`DB_PASSWORD`:** if it contains `#`, `!`, spaces, or shell-like characters, put the value in **double quotes** or Laravel will see a truncated password:
+
+`DB_PASSWORD="pass#word"`
+
+When `db_password` in `terraform.tfvars` is **non-empty**, user-data overwrites `DB_PASSWORD` from Terraform (keep it empty to rely on S3).
+
+---
+
 ## Required for deployment (deploy script sets these)
 
 | Variable | Example | Notes |
 |----------|---------|-------|
-| DB_HOST | 172.31.45.181 | MySQL private IP |
+| DB_HOST | 172.31.x.x | MySQL private IP (match `db_host` in Terraform) |
 | DB_DATABASE | kutoot_backend | |
-| DB_USERNAME | admin | |
-| DB_PASSWORD | root123 | Set via deploy script |
+| DB_USERNAME | kutoot_app | Match MySQL user (e.g. `kutoot_app`@`%`) |
+| DB_PASSWORD | use `"..."` if needed | Unquoted `#` truncates the value in `.env` |
 | APP_ENV | production | |
 | APP_DEBUG | false | |
 | APP_URL | https://dev.kutoot.com | Deploy script sets this |
@@ -86,11 +100,11 @@ Use this as a checklist when setting up `.env` on the server.
 ## Quick copy block (fill your values)
 
 ```
-# Database
-DB_HOST=172.31.45.181
+# Database (quote DB_PASSWORD if it contains #, !, or spaces)
+DB_HOST=172.31.x.x
 DB_DATABASE=kutoot_backend
-DB_USERNAME=admin
-DB_PASSWORD=
+DB_USERNAME=kutoot_app
+DB_PASSWORD=""
 
 # SMS (Way2Mint)
 SMS_DRIVER=way2mint

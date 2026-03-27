@@ -30,7 +30,7 @@ add-apt-repository ppa:ondrej/php -y 2>/dev/null || true
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt-get update -qq
 apt-get install -y nginx php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl \
-  php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl php8.4-opcache unzip git awscli supervisor
+  php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl php8.4-opcache unzip git awscli supervisor python3
 
 # Ensure npm is in PATH (NodeSource install may not update current shell)
 export PATH="/usr/bin:/usr/local/bin:$PATH"
@@ -84,6 +84,8 @@ server {
     server_name _;
 
     client_max_body_size 1024M;
+    client_header_buffer_size 16k;
+    large_client_header_buffers 4 32k;
 
     location / {
         try_files $uri $uri/ @laravel;
@@ -141,10 +143,38 @@ else
 fi
 [ -f .env ] && sed -i 's/\r$//' .env
 
+# S3 is source of truth for DB_PASSWORD when tf var db_password is empty.
+# In kutoot.env use double quotes if the password contains #, !, spaces, etc.:
+#   DB_PASSWORD="your#secret"
 sed -i "s/DB_HOST=.*/DB_HOST=$DB_HOST/" .env
 sed -i "s/DB_DATABASE=.*/DB_DATABASE=$DB_DATABASE/" .env
 sed -i "s/DB_USERNAME=.*/DB_USERNAME=$DB_USERNAME/" .env
-[ -n "$DB_PASSWORD" ] && sed -i "s|DB_PASSWORD=.*|DB_PASSWORD=$DB_PASSWORD|" .env
+if [ -n "$DB_PASSWORD" ]; then
+  export _KUTOOT_UD_DB_PASSWORD="$DB_PASSWORD"
+  python3 <<'PY'
+import os
+
+path = ".env"
+pwd = os.environ["_KUTOOT_UD_DB_PASSWORD"]
+esc = pwd.replace("\\", "\\\\").replace('"', '\\"')
+replacement = f'DB_PASSWORD="{esc}"\n'
+
+lines = []
+found = False
+with open(path, "r", encoding="utf-8", errors="replace") as f:
+    for line in f:
+        if line.startswith("DB_PASSWORD="):
+            lines.append(replacement)
+            found = True
+        else:
+            lines.append(line)
+if not found:
+    lines.append(replacement)
+with open(path, "w", encoding="utf-8", newline="\n") as f:
+    f.writelines(lines)
+PY
+  unset _KUTOOT_UD_DB_PASSWORD
+fi
 sed -i 's/APP_DEBUG=.*/APP_DEBUG=false/' .env
 sed -i 's/APP_ENV=.*/APP_ENV=production/' .env
 sed -i 's|APP_URL=.*|APP_URL=https://dev.kutoot.com|' .env
@@ -203,6 +233,10 @@ echo ">>> Setting permissions..."
 chown -R www-data:www-data /var/www/kutoot
 chmod -R 775 /var/www/kutoot/storage
 chmod -R 775 /var/www/kutoot/bootstrap/cache
+
+# www-data HOME is often /var/www; PsySH/tinker need ~/.config writable
+mkdir -p /var/www/.config/psysh
+chown -R www-data:www-data /var/www/.config
 
 systemctl restart php8.4-fpm nginx
 
