@@ -33,3 +33,15 @@ variable "certificate_arn" {
   type        = string
   default     = ""
 }
+
+variable "enable_deletion_protection" {
+  description = "Protect ALB from accidental deletion (set false only when destroying stack)"
+  type        = bool
+  default     = true
+}
+
+variable "enable_alb_access_logs" {
+  description = "Write ALB access logs to S3 (recommended before public launch)"
+  type        = bool
+  default     = true
+}

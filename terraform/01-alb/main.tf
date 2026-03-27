@@ -26,6 +26,10 @@ locals {
   name       = "${var.project_name}-${var.environment}"
 }
 
+data "aws_caller_identity" "current" {}
+
+data "aws_elb_service_account" "main" {}
+
 # -----------------------------------------------------------------------------
 # ALB Security Group
 # -----------------------------------------------------------------------------
@@ -64,6 +68,82 @@ resource "aws_security_group" "alb" {
 }
 
 # -----------------------------------------------------------------------------
+# S3 bucket for ALB access logs (optional)
+# -----------------------------------------------------------------------------
+
+resource "aws_s3_bucket" "alb_access_logs" {
+  count  = var.enable_alb_access_logs ? 1 : 0
+  bucket = "${local.name}-alb-logs-${data.aws_caller_identity.current.account_id}"
+
+  tags = {
+    Name = "${local.name}-alb-access-logs"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "alb_access_logs" {
+  count  = var.enable_alb_access_logs ? 1 : 0
+  bucket = aws_s3_bucket.alb_access_logs[0].id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "alb_access_logs" {
+  count  = var.enable_alb_access_logs ? 1 : 0
+  bucket = aws_s3_bucket.alb_access_logs[0].id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "alb_access_logs" {
+  count  = var.enable_alb_access_logs ? 1 : 0
+  bucket = aws_s3_bucket.alb_access_logs[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_elb_service_account.main.id}:root"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.alb_access_logs[0].arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action   = "s3:PutObject"
+        Resource = "${aws_s3_bucket.alb_access_logs[0].arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      },
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "delivery.logs.amazonaws.com"
+        }
+        Action   = "s3:GetBucketAcl"
+        Resource = aws_s3_bucket.alb_access_logs[0].arn
+      }
+    ]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.alb_access_logs]
+}
+
+# -----------------------------------------------------------------------------
 # Application Load Balancer
 # -----------------------------------------------------------------------------
 
@@ -74,9 +154,19 @@ resource "aws_lb" "main" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = local.subnet_ids
 
-  enable_deletion_protection = false
+  enable_deletion_protection = var.enable_deletion_protection
+  drop_invalid_header_fields = true
   # Long uploads / slow clients (default 60s is tight for large bodies)
   idle_timeout = 120
+
+  dynamic "access_logs" {
+    for_each = var.enable_alb_access_logs ? [1] : []
+    content {
+      bucket  = aws_s3_bucket.alb_access_logs[0].bucket
+      prefix  = "${local.name}-alb"
+      enabled = true
+    }
+  }
 
   tags = {
     Name = "${local.name}-alb"

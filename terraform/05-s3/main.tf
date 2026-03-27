@@ -26,7 +26,7 @@ resource "aws_s3_bucket_public_access_block" "laravel" {
   restrict_public_buckets = false
 }
 
-# Public read for GetObject (backend/frontend can download)
+# Public read for GetObject (backend/frontend can download) — HTTPS only for API access
 resource "aws_s3_bucket_policy" "laravel" {
   bucket = aws_s3_bucket.laravel.id
 
@@ -39,6 +39,21 @@ resource "aws_s3_bucket_policy" "laravel" {
         Principal = "*"
         Action    = "s3:GetObject"
         Resource  = "${aws_s3_bucket.laravel.arn}/*"
+      },
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.laravel.arn,
+          "${aws_s3_bucket.laravel.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
       }
     ]
   })
@@ -73,5 +88,15 @@ resource "aws_s3_bucket_versioning" "laravel" {
 
   versioning_configuration {
     status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "laravel" {
+  bucket = aws_s3_bucket.laravel.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
   }
 }

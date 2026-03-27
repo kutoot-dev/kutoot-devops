@@ -32,3 +32,8 @@ output "subnet_ids" {
   description = "Subnet IDs used by ALB"
   value       = local.subnet_ids
 }
+
+output "alb_access_logs_bucket" {
+  description = "S3 bucket for ALB access logs (empty if logging disabled)"
+  value       = var.enable_alb_access_logs ? aws_s3_bucket.alb_access_logs[0].bucket : ""
+}

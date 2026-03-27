@@ -128,6 +128,13 @@ resource "aws_instance" "mysql" {
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
+    encrypted   = true
+  }
+
+  metadata_options {
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+    http_endpoint               = "enabled"
   }
 
   user_data = base64encode(templatefile("${path.module}/templates/user-data.sh", {

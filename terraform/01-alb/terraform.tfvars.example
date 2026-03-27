@@ -10,3 +10,7 @@ environment  = "prod"
 
 # HTTPS: Set by apply-all.sh from 03-route53 output. Or set manually after creating cert:
 # certificate_arn = "arn:aws:acm:ap-south-1:ACCOUNT:certificate/xxx"
+
+# Hardening (defaults are secure for go-live)
+# enable_deletion_protection = true
+# enable_alb_access_logs     = true
